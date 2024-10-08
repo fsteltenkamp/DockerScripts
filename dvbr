@@ -1,5 +1,29 @@
 #!/bin/bash
 
+# Function to check for updates and update the script
+check_for_updates() {
+    local url="https://raw.githubusercontent.com/fsteltenkamp/dvbr/main/dvbr"
+    local tmp_file="/tmp/dvbr_new"
+
+    # Download the latest version of the script
+    curl -s -o "$tmp_file" "$url"
+
+    # Compare the downloaded file with the current script
+    if ! cmp -s "$tmp_file" "$0"; then
+        echo "A new version of the script is available. Updating..."
+        mv "$tmp_file" "$0"
+        chmod +x "$0"
+        echo "Update complete. Please re-run the script."
+        exit 0
+    else
+        rm "$tmp_file"
+    fi
+}
+
+if [ "$0" == "update" ]; then
+    check_for_updates
+fi
+
 # Check if at least two arguments are provided
 if [ "$#" -lt 2 ]; then
     echo "Usage: $0 <mode> <volume> [path]"
