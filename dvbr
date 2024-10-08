@@ -37,7 +37,7 @@ if [ "$mode" == "backup" ]; then
     mkdir -p /mnt/dvbr/$volume
     echo "Starting backup for Volume $volume..."
     # backup volume
-    docker run --rm --mount source=$volume,target=/mnt/backmeup -v /mnt/dvbr/$volume/:/mnt/backups busybox sh -c "cd /mnt/backmeup && tar -czf /mnt/backups/backup-$(date +'%Y%d%m-%H%M%S').tar.gz ."
+    docker run --rm --mount source=$volume,target=/mnt/backmeup -v /mnt/dvbr/$volume/:/mnt/backups busybox sh -c "cd /mnt/backmeup && tar --same-owner --preserve-permissions -czf /mnt/backups/backup-$(date +'%Y%d%m-%H%M%S').tar.gz ."
     echo "Backup done."
 fi
 
@@ -61,5 +61,5 @@ if [ "$mode" == "restore" ]; then
     fi
     
     echo "Restoring backup to Volume $volume..."
-    docker run --rm --mount source=$volume,target=/mnt/restoreme -v /mnt/dvbr/$volume/:/mnt/backups busybox sh -c "cd /mnt/restoreme && tar -xzf /mnt/backups/$path --overwrite"
+    docker run --rm --mount source=$volume,target=/mnt/restoreme -v /mnt/dvbr/$volume/:/mnt/backups busybox sh -c "cd /mnt/restoreme && tar --same-owner --preserve-permissions --overwrite -xzf /mnt/backups/$path"
 fi
