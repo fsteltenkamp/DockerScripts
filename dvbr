@@ -33,7 +33,8 @@ check_for_updates() {
     fi
 }
 
-if [ "$0" == "update" ]; then
+if [ "$1" == "update" ]; then
+    echo "Checking for updates, please wait..."
     check_for_updates
 fi
 
