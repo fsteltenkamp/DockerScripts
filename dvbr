@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# variables
+storage_path="/mnt/dvbr"
+storage_check_file=".nas"
+# Inputs
+mode=$1
+volume=$2
+path=$3
+
 # Display usage and help information
 usage() {
     echo "Usage: $0 <mode> <volume> [path]"
@@ -33,42 +41,58 @@ check_for_updates() {
     fi
 }
 
+# check storage location for indicator file
+check_storage() {
+    if [ ! -f "$storage_path/$storage_check_file" ]; then
+        echo "Error: Storage path is not valid"
+        exit 1
+    fi
+}
+
+# check argument count
+check_argument_count() {
+    if [ "$#" -lt 2 ]; then
+        echo "Error: Invalid number of arguments"
+        usage
+        exit 1
+    fi
+}
+
+check_mode() {
+    if [ "$mode" != "backup" ] && [ "$mode" != "restore" ]; then
+        echo "Error: Invalid mode"
+        usage
+        exit 1
+    fi
+}
+
+check_volume() {
+    if [ -z "$volume" ]; then
+        echo "Error: Volume name must be provided"
+        exit 1
+    fi
+    volume_inspect=$(docker volume inspect "$volume")
+    if [ "$volume_inspect" =~ ^\[\] ]; then
+        echo "Error: Volume '$volume' does not exist"
+        exit 1
+    fi
+}
+
+startup_checks() {
+    check_storage
+    check_argument_count
+    check_mode
+    check_volume
+}
+
+# MAIN
+
 if [ "$1" == "update" ]; then
     echo "Checking for updates, please wait..."
     check_for_updates
 fi
 
-# Check if at least two arguments are provided
-if [ "$#" -lt 2 ]; then
-    echo "Error: Invalid number of arguments"
-    usage
-    exit 1
-fi
-
-# Assign inputs to variables
-mode=$1
-volume=$2
-path=$3
-
-# Check if mode is either 'backup' or 'restore'
-if [[ "$mode" != "backup" && "$mode" != "restore" ]]; then
-    echo "Error: Mode must be either 'backup' or 'restore'"
-    exit 1
-fi
-
-# Check if volume is provided
-if [ -z "$volume" ]; then
-    echo "Error: Volume name must be provided"
-    exit 1
-fi
-
-volume_check=$(docker inspect "$volume")
-
-# Check if the output of the inspect command starts with "[]"
-if [[ "$volume_check" =~ ^\[\] ]]; then
-    echo "Error: Volume '$volume' does not exist"
-    exit 1
-fi
+startup_checks
 
 # If mode is 'backup':
 if [ "$mode" == "backup" ]; then
