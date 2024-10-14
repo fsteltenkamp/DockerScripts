@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# Display usage and help information
+usage() {
+    echo "Usage: $0 <mode> <volume> [path]"
+    echo ""
+    echo "Modes:"
+    echo "  backup:  Backup the contents of a Docker volume."
+    echo "  restore: Restore the contents of a Docker volume from a backup."
+    echo "  update:  Update the script to the latest version."
+    echo "           depending on the location of the script, this may require root privileges."
+}
+
 # Function to check for updates and update the script
 check_for_updates() {
     local url="https://raw.githubusercontent.com/fsteltenkamp/dvbr/main/dvbr"
@@ -17,6 +28,8 @@ check_for_updates() {
         exit 0
     else
         rm "$tmp_file"
+        echo "No update available."
+        exit 0
     fi
 }
 
@@ -26,7 +39,8 @@ fi
 
 # Check if at least two arguments are provided
 if [ "$#" -lt 2 ]; then
-    echo "Usage: $0 <mode> <volume> [path]"
+    echo "Error: Invalid number of arguments"
+    usage
     exit 1
 fi
 
