@@ -1,22 +1,33 @@
 #!/bin/bash
 
 # variables
-storage_path="/mnt/dvbr"
-storage_check_file=".nas"
+storage_check_file=".check"
 # Inputs
 mode=$1
 volume=$2
 path=$3
+storage_path=$4
+
+# Check if storage path was provided, otherwise set default value:
+if [ -z $storage_path ]; then
+    storage_path="/mnt/dvbr"
+fi
 
 # Display usage and help information
 usage() {
-    echo "Usage: $0 <mode> <volume> [path]"
+    echo "Usage: $0 <mode> <volume> [path] [storage_path]"
     echo ""
     echo "Modes:"
     echo "  backup:  Backup the contents of a Docker volume."
     echo "  restore: Restore the contents of a Docker volume from a backup."
     echo "  update:  Update the script to the latest version."
     echo "           depending on the location of the script, this may require root privileges."
+    echo "   ----------------------------------------------   "
+    echo "Parameters:"
+    echo "  mode:         see Section Modes"
+    echo "  volume:       Name of the docker volume to backup or restore."
+    echo "  path:         OPTIONAL! The Path to the file to be restored."
+    echo "  storage_path: OPTIONAL! Overwrite the default storage directory (used for backup mode)"
 }
 
 # Function to check for updates and update the script
