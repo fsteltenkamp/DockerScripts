@@ -1,21 +1,15 @@
 #!/bin/bash
 
 # Vars
-DEFAULT_STORAGE="/srv/dvbr"
+STORAGE="/srv/dvbr"
 # Inputs
 mode=$1
 volume=$2
-storage_path=$3
 path=$4
-
-# Check if storage path was provided, otherwise set default value:
-if [ -z $storage_path ]; then
-    storage_path=$DEFAULT_STORAGE
-fi
 
 # Display usage and help information
 usage() {
-    echo "Usage: $0 <mode> <volume> [path] [storage_path]"
+    echo "Usage: $0 <mode> <volume> [path]"
     echo ""
     echo "Modes:"
     echo "  backup:  Backup the contents of a Docker volume."
@@ -26,14 +20,12 @@ usage() {
     echo "Parameters:"
     echo "  mode:         see Section Modes"
     echo "  volume:       Name of the docker volume to backup or restore."
-    echo "  storage_path: OPTIONAL! Overwrite the default storage directory."
-    echo "  path:         OPTIONAL! The Path to the file to be restored."
+    echo "  path:         The Path to the file to be restored. - Only used in restore mode."
     echo "   ----------------------------------------------   "
     echo "Examples:"
     echo "  $0 backup my_volume  -> Creates a .tar.gz file in $storage_path/my_volume with the contents of the volume my_volume."
-    echo "  $0 restore my_volume /mnt/backups backup-20210101-120000.tar.gz -> Restores the contents of the backup file to the volume my_volume."
-    echo "                              |             ╰> This has to be the FULL Path to the file."
-    echo "                              ╰> This can be anything, not used in restore mode, but has to be provided"
+    echo "  $0 restore my_volume backup-20210101-120000.tar.gz -> Copies the contents of the file to the volume my_volume."
+    echo "                              ╰> This has to be the FULL Path to the file."
     echo "  $0 update -> Updates the script to the latest version."
 }
 
@@ -68,9 +60,9 @@ check_for_updates() {
 
 # check storage location
 check_storage() {
-    if [ ! -d "$storage_path" ]; then
+    if [ ! -d "$STORAGE" ]; then
         echo "Error: Storage path is not valid, trying to create path..."
-        mkdir -p $storage_path
+        mkdir -p $STORAGE
         echo "Info: Tried to create storage path, try again."
         exit 1
     fi
@@ -83,6 +75,11 @@ check_arguments() {
     elif [ "$mode" == "backup" ] || [ "$mode" == "restore" ]; then
         if [ -z "$volume" ]; then
             echo "Error: Volume name must be provided for backup or restore mode"
+            usage
+            exit 1
+        fi
+        if [ "$mode" == "restore" ] && [ -z "$path" ]; then
+            echo "Error: Path must be provided in restore mode"
             usage
             exit 1
         fi
@@ -124,7 +121,7 @@ startup_checks
 # If mode is 'backup':
 if [ "$mode" == "backup" ]; then
     # check directories:
-    finalpath=$storage_path/$volume
+    finalpath=$STORAGE/$volume
     mkdir -p $finalpath
     echo "Starting backup for Volume $volume..."
     # backup volume
@@ -152,5 +149,5 @@ if [ "$mode" == "restore" ]; then
     fi
     
     echo "Restoring backup to Volume $volume..."
-    docker run --rm --mount source=$volume,target=/mnt/restoreme -v $path:$path busybox sh -c "cd /mnt/restoreme && tar x --overwrite -zf $path"
+    docker run --rm --mount source=$volume,target=/mnt/restoreme -v $path:$path busybox sh -c "cd /mnt/restoreme && rm -rf ./* && tar x --overwrite -zf $path"
 fi
