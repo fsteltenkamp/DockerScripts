@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# variables
-storage_check_file=".check"
+# Vars
+DEFAULT_STORAGE="/srv/dvbr"
 # Inputs
 mode=$1
 volume=$2
@@ -10,7 +10,7 @@ storage_path=$4
 
 # Check if storage path was provided, otherwise set default value:
 if [ -z $storage_path ]; then
-    storage_path="/mnt/dvbr"
+    storage_path=$DEFAULT_STORAGE
 fi
 
 # Display usage and help information
@@ -52,10 +52,12 @@ check_for_updates() {
     fi
 }
 
-# check storage location for indicator file
+# check storage location
 check_storage() {
-    if [ ! -f "$storage_path/$storage_check_file" ]; then
-        echo "Error: Storage path is not valid"
+    if [ ! -d "$storage_path" ]; then
+        echo "Error: Storage path is not valid, trying to create path..."
+        mkdir -p $storage_path
+        echo "Info: Tried to create storage path, try again."
         exit 1
     fi
 }
