@@ -99,7 +99,7 @@ check_volume() {
         exit 1
     fi
     volume_inspect=$(docker volume inspect "$volume")
-    if [ "$volume_inspect" =~ ^\[\] ]; then
+    if [[ "$volume_inspect" =~ ^\[\] ]]; then
         echo "Error: Volume '$volume' does not exist"
         exit 1
     fi
