@@ -152,5 +152,5 @@ if [ "$mode" == "restore" ]; then
     fi
     
     echo "Restoring backup to Volume $volume..."
-    docker run --rm --mount source=$volume,target=/mnt/restoreme -v /mnt/dvbr/$volume/:/mnt/backups busybox sh -c "cd /mnt/restoreme && tar x --overwrite -zf /mnt/backups/$path"
+    docker run --rm --mount source=$volume,target=/mnt/restoreme -v $path:$path busybox sh -c "cd /mnt/restoreme && tar x --overwrite -zf $path"
 fi
