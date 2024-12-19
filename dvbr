@@ -5,8 +5,8 @@ DEFAULT_STORAGE="/srv/dvbr"
 # Inputs
 mode=$1
 volume=$2
-path=$3
-storage_path=$4
+storage_path=$3
+path=$4
 
 # Check if storage path was provided, otherwise set default value:
 if [ -z $storage_path ]; then
@@ -26,8 +26,15 @@ usage() {
     echo "Parameters:"
     echo "  mode:         see Section Modes"
     echo "  volume:       Name of the docker volume to backup or restore."
+    echo "  storage_path: OPTIONAL! Overwrite the default storage directory."
     echo "  path:         OPTIONAL! The Path to the file to be restored."
-    echo "  storage_path: OPTIONAL! Overwrite the default storage directory (used for backup mode)"
+    echo "   ----------------------------------------------   "
+    echo "Examples:"
+    echo "  $0 backup my_volume  -> Creates a .tar.gz file in $storage_path/my_volume with the contents of the volume my_volume."
+    echo "  $0 restore my_volume /mnt/backups backup-20210101-120000.tar.gz -> Restores the contents of the backup file to the volume my_volume."
+    echo "                              |             ╰> This has to be the FULL Path to the file."
+    echo "                              ╰> This can be anything, not used in restore mode, but has to be provided"
+    echo "  $0 update -> Updates the script to the latest version."
 }
 
 # Function to check for updates and update the script
