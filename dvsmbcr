@@ -1,5 +1,6 @@
 #!/bin/bash
 
+VERSION="0.0.1"
 VOLUME_NAME=$1
 SMB_HOST=$2
 SMB_PATH=$3
@@ -10,10 +11,20 @@ SMBOPT_GID=$7
 SMBOPT_FILEMODE=$8
 SMBOPT_DIRMODE=$9
 
+# Function to check for updates and update the script
+check_for_updates() {
+    local version_url="https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvsmbcr.ver"
+    local url="https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvsmbcr"
+    local tmp_file="/tmp/dvsmbcr_new"
 
-docker volume create \
-    --driver local \
-    --opt type=cifs \
-    --opt device=//$SMB_HOST/$SMB_PATH \
-    --opt o=addr=$SMB_HOST,username=$SMB_USER,password=$SMB_PASS \
-    --name $VOLUME_NAME
+    # Check if the content of $version_url is different to our $VERSION var:
+    if [ "$(curl -s $version_url)" != "$VERSION" ]; then
+        echo "A new version of the script is available. Updating..."
+        curl -s -o "$tmp_file" "$url"
+        mv "$tmp_file" "$0"
+        chmod +x "$0"
+        echo "Update complete. Please re-run the script. (arrow-up + enter)"
+        exit 0
+    fi
+}
+
