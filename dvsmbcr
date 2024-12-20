@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.0.2"
+VERSION="0.0.3"
 VOLUME_NAME=$1
 SMB_HOST=$2
 SMB_PATH=$3
@@ -48,7 +48,7 @@ check_arguments() {
 
 # check docker volume
 check_volume() {
-    volume_inspect=$(docker volume inspect "$VOLUME_NAME")
+    volume_inspect=$(docker volume inspect "$VOLUME_NAME" 2> /dev/null)
     # if the volume exists, prompt user to remove it (supply command)
     if [ $? -eq 0 ]; then
         echo "Volume $VOLUME_NAME already exists. Please remove it first."
