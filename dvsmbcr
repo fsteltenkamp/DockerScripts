@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.0.1"
+VERSION="0.0.2"
 VOLUME_NAME=$1
 SMB_HOST=$2
 SMB_PATH=$3
@@ -59,7 +59,7 @@ check_volume() {
 
 # Create the volume
 create_volume() {
-    local OPTSTRING="o=addr=$SMB_HOST,username=$SMB_USER,password=$SMB_PASS"
+    local OPTSTRING="o=username=$SMB_USER,password=$SMB_PASS"
     # only use the smbopt_* variables if they are set
     if [ -n "$SMBOPT_UID" ]; then
         OPTSTRING="$OPTSTRING,uid=$SMBOPT_UID"
