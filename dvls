@@ -1,0 +1,61 @@
+#!/bin/bash
+
+VERSION="0.0.1"
+VOLUME_NAME=$1
+SUBPATH=$2
+
+# Function to check for updates and update the script
+check_for_updates() {
+    local version_url="https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvls.ver"
+    local url="https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvls"
+    local tmp_file="/tmp/dvsmbcr_new"
+
+    # Check if the content of $version_url is different to our $VERSION var:
+    local REMOTE_VERSION=$(curl -s $version_url) # catch curl errors:
+    if [ $? -ne 0 ]; then
+        echo "Error: Could not check for updates."
+        return
+    fi
+    if [ "$REMOTE_VERSION" != "$VERSION" ]; then
+        echo "A new version of the script is available. Updating..."
+        curl -s -o "$tmp_file" "$url"
+        mv "$tmp_file" "$0"
+        chmod +x "$0"
+        echo "Update complete. Please re-run the script. (arrow-up + enter)"
+        exit 0
+    fi
+}
+
+usage() {
+    echo "Usage: $0 <volume_name> [subpath]"
+    echo "Example: $0 myvolume"    
+}
+
+check_arguments() {
+    if [ -z "$VOLUME_NAME" ]; then
+        echo "Error: Missing arguments"
+        usage
+        exit 1
+    fi
+}
+
+# check if docker volume exists (return 0 if it does)
+check_volume() {
+    volume_inspect=$(docker volume inspect "$VOLUME_NAME" 2> /dev/null)
+    if [ $? -eq 0 ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+list_volume_contents() {
+    docker run --rm -v $VOLUME_NAME:/volume alpine ls -l /volume/$SUBPATH
+}
+
+## Main
+check_for_updates
+check_arguments
+if [ check_volume ]; then
+    list_volume_contents
+fi
