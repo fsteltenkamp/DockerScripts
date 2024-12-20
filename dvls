@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.0.2"
+VERSION="0.0.3"
 VOLUME_NAME=$1
 SUBPATH=$2
 
@@ -50,7 +50,7 @@ check_volume() {
 }
 
 list_volume_contents() {
-    docker run --rm -v $VOLUME_NAME:/volume alpine ls -l /volume/$SUBPATH
+    docker run --rm -v $VOLUME_NAME:/volume alpine ls --color=auto -hAl --group-directories-first /volume/$SUBPATH
 }
 
 ## Main
