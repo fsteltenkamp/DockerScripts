@@ -44,7 +44,7 @@ check_for_updates() {
     local tmp_file="/tmp/dvbr_new"
 
     # Check if the content of $version_url is different to our $VERSION var:
-    $REMOTE_VERSION=$(curl -s $version_url) # catch curl errors:
+    local REMOTE_VERSION=$(curl -s $version_url) # catch curl errors:
     if [ $? -ne 0 ]; then
         echo "Error: Could not check for updates."
         return
