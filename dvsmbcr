@@ -28,3 +28,55 @@ check_for_updates() {
     fi
 }
 
+usage() {
+    echo "Usage: $0 <volume_name> <smb_host> <smb_path> <smb_user> <smb_pass> [smbopt_uid] [smbopt_gid] [smbopt_filemode] [smbopt_dirmode]"
+    echo "Example: $0 myvolume 192.168.178.1 share myuser mypass 1000 1000 0644 0755"
+}
+
+check_arguments() {
+    if [ -z "$VOLUME_NAME" ] || [ -z "$SMB_HOST" ] || [ -z "$SMB_PATH" ] || [ -z "$SMB_USER" ] || [ -z "$SMB_PASS" ]; then
+        echo "Error: Missing arguments"
+        usage
+        exit 1
+    fi
+}
+
+# check docker volume
+check_volume() {
+    volume_inspect=$(docker volume inspect "$VOLUME_NAME")
+    # if the volume exists, prompt user to remove it (supply command)
+    if [ $? -eq 0 ]; then
+        echo "Volume $VOLUME_NAME already exists. Please remove it first."
+        echo "Use this: docker volume rm $VOLUME_NAME"
+        exit 1
+    fi
+}
+
+# Create the volume
+create_volume() {
+    local OPTSTRING="o=addr=$SMB_HOST,username=$SMB_USER,password=$SMB_PASS"
+    # only use the smbopt_* variables if they are set
+    if [ -n "$SMBOPT_UID" ]; then
+        OPTSTRING="$OPTSTRING,uid=$SMBOPT_UID"
+    fi
+    if [ -n "$SMBOPT_GID" ]; then
+        OPTSTRING="$OPTSTRING,gid=$SMBOPT_GID"
+    fi
+    if [ -n "$SMBOPT_FILEMODE" ]; then
+        OPTSTRING="$OPTSTRING,filemode=$SMBOPT_FILEMODE"
+    fi
+    if [ -n "$SMBOPT_DIRMODE" ]; then
+        OPTSTRING="$OPTSTRING,dirmode=$SMBOPT_DIRMODE"
+    fi
+    docker volume create \
+            --driver local \
+            --opt type=cifs \
+            --opt device=//$SMB_HOST/$SMB_PATH \
+            --opt $OPTSTRING \
+            --name $VOLUME_NAME
+}
+
+## Main
+check_for_updates
+check_arguments
+check_volume
