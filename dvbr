@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Vars
-VERSION="1.0"
+VERSION="1.1"
 STORAGE="/srv/dvbr"
 # Inputs
 mode=$1
 volume=$2
-path=$4
+path=$3
 
 # Display usage and help information
 usage() {
@@ -71,9 +71,7 @@ check_storage() {
 
 # check argument count
 check_arguments() {
-    if [ "$mode" == "update" ]; then
-        return
-    elif [ "$mode" == "backup" ] || [ "$mode" == "restore" ]; then
+    if [ "$mode" == "backup" ] || [ "$mode" == "restore" ]; then
         if [ -z "$volume" ]; then
             echo "Error: Volume name must be provided for backup or restore mode"
             usage
@@ -123,11 +121,6 @@ fi
 
 # If mode is 'restore', check if path is provided and valid
 if [ "$mode" == "restore" ]; then
-    if [ -z "$path" ]; then
-        echo "Error: Path must be provided in restore mode"
-        exit 1
-    fi
-    
     # Check if the file has a .tar.gz extension
     if [[ ! "$path" =~ \.tar\.gz$ ]]; then
         echo "Error: Path must be a valid .tar.gz file"
