@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.0.3"
+VERSION="0.0.4"
 VOLUME_NAME=$1
 PORT=$2
 
@@ -66,7 +66,7 @@ get_host_ip() {
 check_for_updates
 check_arguments
 if [ check_volume ]; then
-    start_filebrowser
-    local host_ip=$(get_host_ip)
+    host_ip=$(get_host_ip)
     echo "Open your browser at http://$host_ip:$PORT"
+    start_filebrowser
 fi
