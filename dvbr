@@ -38,7 +38,7 @@ check_docker() {
 
 # Function to check for updates and update the script
 check_for_updates() {
-    local url="https://raw.githubusercontent.com/fsteltenkamp/dvbr/main/dvbr"
+    local url="https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvbr"
     local tmp_file="/tmp/dvbr_new"
 
     # Download the latest version of the script
