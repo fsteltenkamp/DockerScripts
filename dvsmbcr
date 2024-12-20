@@ -1,0 +1,19 @@
+#!/bin/bash
+
+VOLUME_NAME=$1
+SMB_HOST=$2
+SMB_PATH=$3
+SMB_USER=$4
+SMB_PASS=$5
+SMBOPT_UID=$6
+SMBOPT_GID=$7
+SMBOPT_FILEMODE=$8
+SMBOPT_DIRMODE=$9
+
+
+docker volume create \
+    --driver local \
+    --opt type=cifs \
+    --opt device=//$SMB_HOST/$SMB_PATH \
+    --opt o=addr=$SMB_HOST,username=$SMB_USER,password=$SMB_PASS \
+    --name $VOLUME_NAME
