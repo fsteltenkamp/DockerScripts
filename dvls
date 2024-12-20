@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.0.1"
+VERSION="0.0.2"
 VOLUME_NAME=$1
 SUBPATH=$2
 
@@ -8,7 +8,7 @@ SUBPATH=$2
 check_for_updates() {
     local version_url="https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvls.ver"
     local url="https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvls"
-    local tmp_file="/tmp/dvsmbcr_new"
+    local tmp_file="/tmp/dvls_new"
 
     # Check if the content of $version_url is different to our $VERSION var:
     local REMOTE_VERSION=$(curl -s $version_url) # catch curl errors:
