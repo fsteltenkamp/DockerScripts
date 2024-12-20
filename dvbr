@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Vars
+VERSION="1.0"
 STORAGE="/srv/dvbr"
 # Inputs
 mode=$1
@@ -39,21 +40,16 @@ check_docker() {
 # Function to check for updates and update the script
 check_for_updates() {
     local url="https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvbr"
+    local version_url="https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvbr.ver"
     local tmp_file="/tmp/dvbr_new"
 
-    # Download the latest version of the script
-    curl -s -o "$tmp_file" "$url"
-
-    # Compare the downloaded file with the current script
-    if ! cmp -s "$tmp_file" "$0"; then
+    # Check if the content of $version_url is different to our $VERSION var:
+    if [ "$(curl -s $version_url)" != "$VERSION" ]; then
         echo "A new version of the script is available. Updating..."
+        curl -s -o "$tmp_file" "$url"
         mv "$tmp_file" "$0"
         chmod +x "$0"
-        echo "Update complete. Please re-run the script."
-        exit 0
-    else
-        rm "$tmp_file"
-        echo "No update available."
+        echo "Update complete. Please re-run the script. (arrow-up + enter)"
         exit 0
     fi
 }
