@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.0.2"
+VERSION="0.0.3"
 VOLUME_NAME=$1
 PORT=$2
 
@@ -56,9 +56,17 @@ start_filebrowser() {
     docker run --rm -v $VOLUME_NAME:/srv -p $PORT:80 filebrowser/filebrowser:latest
 }
 
+get_host_ip() {
+    # Get the IP of the host
+    host_ip=$(hostname -I | awk '{print $1}')
+    echo $host_ip
+}
+
 ## Main
 check_for_updates
 check_arguments
 if [ check_volume ]; then
     start_filebrowser
+    local host_ip=$(get_host_ip)
+    echo "Open your browser at http://$host_ip:$PORT"
 fi
