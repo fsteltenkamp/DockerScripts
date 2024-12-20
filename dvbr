@@ -44,7 +44,12 @@ check_for_updates() {
     local tmp_file="/tmp/dvbr_new"
 
     # Check if the content of $version_url is different to our $VERSION var:
-    if [ "$(curl -s $version_url)" != "$VERSION" ]; then
+    $REMOTE_VERSION=$(curl -s $version_url) # catch curl errors:
+    if [ $? -ne 0 ]; then
+        echo "Error: Could not check for updates."
+        return
+    fi
+    if [ "$REMOTE_VERSION" != "$VERSION" ]; then
         echo "A new version of the script is available. Updating..."
         curl -s -o "$tmp_file" "$url"
         mv "$tmp_file" "$0"
@@ -98,21 +103,12 @@ check_volume() {
     fi
 }
 
-startup_checks() {
-    check_docker
-    check_storage
-    check_arguments
-    check_volume
-}
-
 # MAIN
-
-if [ "$1" == "update" ]; then
-    echo "Checking for updates, please wait..."
-    check_for_updates
-fi
-
-startup_checks
+check_for_updates
+check_docker
+check_storage
+check_arguments
+check_volume
 
 # If mode is 'backup':
 if [ "$mode" == "backup" ]; then

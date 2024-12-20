@@ -18,7 +18,12 @@ check_for_updates() {
     local tmp_file="/tmp/dvsmbcr_new"
 
     # Check if the content of $version_url is different to our $VERSION var:
-    if [ "$(curl -s $version_url)" != "$VERSION" ]; then
+    $REMOTE_VERSION=$(curl -s $version_url) # catch curl errors:
+    if [ $? -ne 0 ]; then
+        echo "Error: Could not check for updates."
+        return
+    fi
+    if [ "$REMOTE_VERSION" != "$VERSION" ]; then
         echo "A new version of the script is available. Updating..."
         curl -s -o "$tmp_file" "$url"
         mv "$tmp_file" "$0"
