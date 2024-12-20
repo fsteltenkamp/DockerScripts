@@ -80,3 +80,4 @@ create_volume() {
 check_for_updates
 check_arguments
 check_volume
+create_volume
