@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Vars
-VERSION="1.1"
+VERSION="1.1.1"
 STORAGE="/srv/dvbr"
 # Inputs
 mode=$1
@@ -15,8 +15,6 @@ usage() {
     echo "Modes:"
     echo "  backup:  Backup the contents of a Docker volume."
     echo "  restore: Restore the contents of a Docker volume from a backup."
-    echo "  update:  Update the script to the latest version."
-    echo "           depending on the location of the script, this may require root privileges."
     echo "   ----------------------------------------------   "
     echo "Parameters:"
     echo "  mode:         see Section Modes"
@@ -27,7 +25,6 @@ usage() {
     echo "  $0 backup my_volume  -> Creates a .tar.gz file in $storage_path/my_volume with the contents of the volume my_volume."
     echo "  $0 restore my_volume backup-20210101-120000.tar.gz -> Copies the contents of the file to the volume my_volume."
     echo "                                        ╰> This has to be the FULL Path to the file."
-    echo "  $0 update -> Updates the script to the latest version."
 }
 
 check_docker() {
