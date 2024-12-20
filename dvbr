@@ -25,7 +25,7 @@ usage() {
     echo "Examples:"
     echo "  $0 backup my_volume  -> Creates a .tar.gz file in $storage_path/my_volume with the contents of the volume my_volume."
     echo "  $0 restore my_volume backup-20210101-120000.tar.gz -> Copies the contents of the file to the volume my_volume."
-    echo "                              ╰> This has to be the FULL Path to the file."
+    echo "                                        ╰> This has to be the FULL Path to the file."
     echo "  $0 update -> Updates the script to the latest version."
 }
 
