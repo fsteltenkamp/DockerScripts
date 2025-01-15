@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.0.1"
+VERSION="0.0.2"
 VOLUME_NAME=$1
 SUBPATH=$2
 
@@ -50,7 +50,7 @@ check_volume() {
 }
 
 getShell() {
-    docker run --rm -v $VOLUME_NAME:/volume alpine sh /volume/$SUBPATH
+    docker run -it --rm -v $VOLUME_NAME:/volume alpine sh -c "cd /volume/$SUBPATH; sh"
 }
 
 ## Main
