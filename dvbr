@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Vars
-VERSION="1.1.1"
+VERSION="1.2.0"
 STORAGE="/srv/dvbr"
 # Inputs
 mode=$1
@@ -98,8 +98,46 @@ check_volume() {
     fi
 }
 
+install_other_scripts() {
+    # request permission:
+    echo "This action will install several more scripts on this system to aid in handling docker volumes."
+    echo "The Scripts will be installed in /usr/local/bin."
+    echo "Do you want to continue? (y/n)"
+    read -r answer
+    # only continue if user gives permission:
+    if [ "$answer" == "y" ]; then
+        # download the scripts:
+        curl -s -o /usr/local/bin/dvbr https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvbr
+        curl -s -o /usr/local/bin/dvls https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvls
+        curl -s -o /usr/local/bin/dvfbr https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvfbr
+        curl -s -o /usr/local/bin/dvsh https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvsh
+        curl -s -o /usr/local/bin/dvsmbcr https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvsmbcr
+        # make them executable:
+        chmod +x /usr/local/bin/dvbr
+        chmod +x /usr/local/bin/dvfbr
+        chmod +x /usr/local/bin/dvls
+        chmod +x /usr/local/bin/dvsh
+        chmod +x /usr/local/bin/dvsmbcr
+        echo "Scripts installed. You can now use the following scripts:"
+        echo "- dvbr.....backup and restore Docker Volumes."
+        echo "- dvls.....list files inside a Docker Volume."
+        echo "- dvfbr....start a filebrowser to manage files in a Docker Volume."
+        echo "- dvsh.....start a shell inside a Docker Volume."
+        echo "- dvsmbcr..easily create a new Volume that is connected to a SMB Share."
+    fi
+}
+
 # MAIN
-check_for_updates
+# check if the user wants to install the other scripts:
+if [[ "$@" == *"--install"* ]]; then
+    install_other_scripts
+    exit
+fi
+# check if the user wants to update the script:
+if [[ "$@" == *"--update"* ]]; then
+    check_for_updates
+    exit
+fi
 check_docker
 check_storage
 check_arguments
