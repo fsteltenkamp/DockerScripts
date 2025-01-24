@@ -22,21 +22,21 @@ Every Script accepts the following flags:
 ## Installation:
 dvbr:
 ```bash
-wget https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/refs/heads/main/dvbr -O /usr/local/bin/dvbr
+wget https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/refs/heads/main/dvbr -O /usr/local/bin/dvbr && chmod +x /usr/local/bin/dvbr
 ```
 dvfbr:
 ```bash
-wget https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/refs/heads/main/dvfbr -O /usr/local/bin/dvfbr
+wget https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/refs/heads/main/dvfbr -O /usr/local/bin/dvfbr && chmod +x /usr/local/bin/dvfbr
 ```
 dvls:
 ```bash
-wget https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/refs/heads/main/dvls -O /usr/local/bin/dvls
+wget https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/refs/heads/main/dvls -O /usr/local/bin/dvls && chmod +x /usr/local/bin/dvls
 ```
 dvsh:
 ```bash
-wget https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/refs/heads/main/dvsh -O /usr/local/bin/dvsh
+wget https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/refs/heads/main/dvsh -O /usr/local/bin/dvsh && chmod +x /usr/local/bin/dvsh
 ```
 dvsmbcr:
 ```bash
-wget https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/refs/heads/main/dvbr -O /usr/local/bin/dvsmbcr
+wget https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/refs/heads/main/dvbr -O /usr/local/bin/dvsmbcr && chmod +x /usr/local/bin/dvsmbcr
 ```
