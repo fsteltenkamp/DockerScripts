@@ -19,7 +19,7 @@ env:
   # github.repository as <account>/<repo>
   IMAGE_NAME: ${{ github.repository }}/util
   # Build Context
-  CONTEXT: /images/util
+  CONTEXT: images/util
 
 
 jobs:
