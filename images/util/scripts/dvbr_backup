@@ -1,0 +1,6 @@
+#!/bin/bash
+
+src=$1
+dest=$2
+
+tar cf - $src | pv -s $(du -sb $src | awk '{print $1}') | gzip -9 > $dest
