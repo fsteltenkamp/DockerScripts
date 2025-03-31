@@ -20,6 +20,8 @@ env:
   IMAGE_NAME: ${{ github.repository }}_util
   # Build Context
   CONTEXT: images/util
+  # extra tags:
+  TAGS: latest
 
 jobs:
   build:
@@ -77,7 +79,7 @@ jobs:
           context: ${{ env.CONTEXT }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          labels: ${{ steps.meta.outputs.labels }} ${{ env.TAGS }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

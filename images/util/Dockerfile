@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-RUN apk add pv
+RUN apk add pv bash
 
 COPY scripts/dvbr_backup /usr/local/bin/dvbr_backup
 RUN chmod +x /usr/local/bin/dvbr_backup
