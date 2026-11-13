@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Vars
-VERSION="1.3.0"
+VERSION="1.3.1"
 STORAGE="/srv/dvbr"
 # Inputs
 mode=$1
@@ -22,9 +22,8 @@ usage() {
     echo "  path:         The Path to the file to be restored. - Only used in restore mode."
     echo "   ----------------------------------------------   "
     echo "Examples:"
-    echo "  $0 backup my_volume  -> Creates a .tar.gz file in $storage_path/my_volume with the contents of the volume my_volume."
-    echo "  $0 restore my_volume backup-20210101-120000.tar.gz -> Copies the contents of the file to the volume my_volume."
-    echo "                                        ╰> This has to be the FULL Path to the file."
+    echo "  $0 backup my_volume  -> Creates a .tar.gz file in $STORAGE/my_volume with the contents of the volume my_volume."
+    echo "  $0 restore my_volume $STORAGE/my_volume/backup-20210101-120000.tar.gz -> Replaces the contents of the volume my_volume with the contents of the file."
 }
 
 check_docker() {
@@ -34,35 +33,59 @@ check_docker() {
     fi
 }
 
+# check if a flag was passed as its own argument
+has_flag() {
+    local flag=$1 arg
+    shift
+    for arg in "$@"; do
+        [ "$arg" == "$flag" ] && return 0
+    done
+    return 1
+}
+
+# download a file to a temp file, verify that it contains $pattern and move it into place
+download_file() {
+    local url=$1 dest=$2 mode=$3 pattern=$4 tmp_file
+    tmp_file=$(mktemp) || return 1
+    if curl -fsS -o "$tmp_file" "$url" && grep -q "$pattern" "$tmp_file" && mv "$tmp_file" "$dest"; then
+        chmod "$mode" "$dest"
+        return 0
+    fi
+    rm -f "$tmp_file"
+    return 1
+}
+
 # Function to check for updates and update the script
 check_for_updates() {
     local url="https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvbr"
     local version_url="https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvbr.ver"
-    local tmp_file="/tmp/dvbr_new"
+    local REMOTE_VERSION
 
     # Check if the content of $version_url is different to our $VERSION var:
-    local REMOTE_VERSION=$(curl -s $version_url) # catch curl errors:
-    if [ $? -ne 0 ]; then
+    if ! REMOTE_VERSION=$(curl -fsS "$version_url"); then
         echo "Error: Could not check for updates."
-        return
+        return 1
     fi
     if [ "$REMOTE_VERSION" != "$VERSION" ]; then
         echo "A new version of the script is available. Updating..."
-        curl -s -o "$tmp_file" "$url"
-        mv "$tmp_file" "$0"
-        chmod +x "$0"
+        if ! download_file "$url" "$0" 755 '^#!/bin/bash'; then
+            echo "Error: Update failed, the script was not changed."
+            return 1
+        fi
         echo "Update complete. Please re-run the script. (arrow-up + enter)"
         exit 0
     fi
+    echo "Already up to date."
 }
 
-# check storage location
+# check storage location, create it if it does not exist
 check_storage() {
     if [ ! -d "$STORAGE" ]; then
-        echo "Error: Storage path is not valid, trying to create path..."
-        mkdir -p $STORAGE
-        echo "Info: Tried to create storage path, try again."
-        exit 1
+        echo "Info: Storage path $STORAGE does not exist, creating it..."
+        if ! mkdir -p "$STORAGE"; then
+            echo "Error: Could not create storage path $STORAGE"
+            exit 1
+        fi
     fi
 }
 
@@ -87,18 +110,15 @@ check_arguments() {
 }
 
 check_volume() {
-    if [ -z "$volume" ]; then
-        echo "Error: Volume name must be provided"
-        exit 1
-    fi
-    volume_inspect=$(docker volume inspect "$volume")
-    if [[ "$volume_inspect" =~ ^\[\] ]]; then
+    if ! docker volume inspect "$volume" &> /dev/null; then
         echo "Error: Volume '$volume' does not exist"
         exit 1
     fi
 }
 
 install_other_scripts() {
+    local base_url="https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main"
+    local script
     # request permission:
     echo "This action will install several more scripts on this system to aid in handling docker volumes."
     echo "The Scripts will be installed in /usr/local/bin."
@@ -106,21 +126,17 @@ install_other_scripts() {
     read -r answer
     # only continue if user gives permission:
     if [ "$answer" == "y" ]; then
-        # download the scripts:
-        curl -s -o /usr/local/bin/dvbr https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvbr
-        curl -s -o /usr/local/bin/dvls https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvls
-        curl -s -o /usr/local/bin/dvfbr https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvfbr
-        curl -s -o /usr/local/bin/dvsh https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvsh
-        curl -s -o /usr/local/bin/dvsmbcr https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvsmbcr
-        # make them executable:
-        chmod +x /usr/local/bin/dvbr
-        chmod +x /usr/local/bin/dvfbr
-        chmod +x /usr/local/bin/dvls
-        chmod +x /usr/local/bin/dvsh
-        chmod +x /usr/local/bin/dvsmbcr
+        if [ ! -w /usr/local/bin ]; then
+            echo "Error: No write permission for /usr/local/bin, try again with sudo."
+            exit 1
+        fi
+        # download the scripts (into a temp file first, this script might be one of them and is still running):
+        for script in dvbr dvls dvfbr dvsh dvsmbcr; do
+            download_file "$base_url/$script" "/usr/local/bin/$script" 755 '^#!/bin/bash' || echo "Error: Could not install $script"
+        done
         # install bash completion (volume names, paths inside volumes, backups, ...):
         mkdir -p /etc/bash_completion.d
-        curl -s -o /etc/bash_completion.d/dockerscripts https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dockerscripts-completion.bash
+        download_file "$base_url/dockerscripts-completion.bash" /etc/bash_completion.d/dockerscripts 644 '^complete -F' || echo "Error: Could not install bash completion"
         echo "Scripts installed. You can now use the following scripts:"
         echo "- dvbr.....backup and restore Docker Volumes."
         echo "- dvls.....list files inside a Docker Volume."
@@ -133,28 +149,31 @@ install_other_scripts() {
 
 # MAIN
 # check if the user wants to install the other scripts:
-if [[ "$@" == *"--install"* ]]; then
+if has_flag --install "$@"; then
     install_other_scripts
     exit
 fi
 # check if the user wants to update the script:
-if [[ "$@" == *"--update"* ]]; then
+if has_flag --update "$@"; then
     check_for_updates
     exit
 fi
 check_docker
-check_storage
 check_arguments
 check_volume
 
 # If mode is 'backup':
 if [ "$mode" == "backup" ]; then
+    check_storage
     # check directories:
-    finalpath=$STORAGE/$volume
-    mkdir -p $finalpath
+    finalpath="$STORAGE/$volume"
+    mkdir -p "$finalpath"
     echo "Starting backup for Volume $volume..."
     # backup volume
-    docker run --rm --mount source=$volume,target=/mnt/backmeup -v $finalpath/:/mnt/backups busybox sh -c "cd /mnt/backmeup && tar czf /mnt/backups/backup-$(date +'%Y%d%m-%H%M%S').tar.gz ."
+    if ! docker run --rm --mount "source=$volume,target=/mnt/backmeup" -v "$finalpath:/mnt/backups" busybox sh -c "cd /mnt/backmeup && tar czf /mnt/backups/backup-$(date +'%Y%m%d-%H%M%S').tar.gz ."; then
+        echo "Error: Backup failed."
+        exit 1
+    fi
     echo "Backup done."
 fi
 
@@ -165,13 +184,28 @@ if [ "$mode" == "restore" ]; then
         echo "Error: Path must be a valid .tar.gz file"
         exit 1
     fi
-    
+
     # Check if the file exists
     if [ ! -f "$path" ]; then
         echo "Error: File does not exist"
         exit 1
     fi
-    
+    # docker needs an absolute path for bind mounts
+    path=$(realpath -- "$path")
+
+    echo "This will DELETE all current contents of Volume $volume and replace them with the contents of $path."
+    echo "Do you want to continue? (y/n)"
+    read -r answer
+    if [ "$answer" != "y" ]; then
+        echo "Aborted."
+        exit 1
+    fi
+
     echo "Restoring backup to Volume $volume..."
-    docker run --rm --mount source=$volume,target=/mnt/restoreme -v $path:$path busybox sh -c "cd /mnt/restoreme && rm -rf ./* && tar x --overwrite -zf $path"
+    # verify the archive before deleting anything, then empty the volume (including hidden files) and extract
+    if ! docker run --rm --mount "source=$volume,target=/mnt/restoreme" -v "$path:/mnt/backup.tar.gz:ro" busybox sh -c "tar tzf /mnt/backup.tar.gz > /dev/null && cd /mnt/restoreme && find . -mindepth 1 -delete && tar x --overwrite -zf /mnt/backup.tar.gz"; then
+        echo "Error: Restore failed."
+        exit 1
+    fi
+    echo "Restore done."
 fi

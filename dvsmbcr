@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.1"
+VERSION="1.2"
 VOLUME_NAME=$1
 SMB_HOST=$2
 SMB_PATH=$3
@@ -11,46 +11,78 @@ SMBOPT_GID=$7
 SMBOPT_FILEMODE=$8
 SMBOPT_DIRMODE=$9
 
+# check if a flag was passed as its own argument
+has_flag() {
+    local flag=$1 arg
+    shift
+    for arg in "$@"; do
+        [ "$arg" == "$flag" ] && return 0
+    done
+    return 1
+}
+
+# download a file to a temp file, verify that it contains $pattern and move it into place
+download_file() {
+    local url=$1 dest=$2 mode=$3 pattern=$4 tmp_file
+    tmp_file=$(mktemp) || return 1
+    if curl -fsS -o "$tmp_file" "$url" && grep -q "$pattern" "$tmp_file" && mv "$tmp_file" "$dest"; then
+        chmod "$mode" "$dest"
+        return 0
+    fi
+    rm -f "$tmp_file"
+    return 1
+}
+
 # Function to check for updates and update the script
 check_for_updates() {
-    local version_url="https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvsmbcr.ver"
     local url="https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvsmbcr"
-    local tmp_file="/tmp/dvsmbcr_new"
+    local version_url="https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvsmbcr.ver"
+    local REMOTE_VERSION
 
     # Check if the content of $version_url is different to our $VERSION var:
-    local REMOTE_VERSION=$(curl -s $version_url) # catch curl errors:
-    if [ $? -ne 0 ]; then
+    if ! REMOTE_VERSION=$(curl -fsS "$version_url"); then
         echo "Error: Could not check for updates."
-        return
+        return 1
     fi
     if [ "$REMOTE_VERSION" != "$VERSION" ]; then
         echo "A new version of the script is available. Updating..."
-        curl -s -o "$tmp_file" "$url"
-        mv "$tmp_file" "$0"
-        chmod +x "$0"
+        if ! download_file "$url" "$0" 755 '^#!/bin/bash'; then
+            echo "Error: Update failed, the script was not changed."
+            return 1
+        fi
         echo "Update complete. Please re-run the script. (arrow-up + enter)"
         exit 0
     fi
+    echo "Already up to date."
 }
 
 usage() {
-    echo "Usage: $0 <volume_name> <smb_host> <smb_path> <smb_user> <smb_pass> [smbopt_uid] [smbopt_gid] [smbopt_filemode] [smbopt_dirmode]"
-    echo "Example: $0 myvolume 192.168.178.1 share myuser mypass 1000 1000 0644 0755"
+    echo "Usage: $0 <volume_name> <smb_host> <smb_path> <smb_user> [smb_pass] [smbopt_uid] [smbopt_gid] [smbopt_filemode] [smbopt_dirmode]"
+    echo "Example: $0 myvolume 192.168.178.1 share myuser - 1000 1000 0644 0755"
+    echo "If smb_pass is omitted or '-', you will be asked for it (keeps it out of your shell history)."
 }
 
 check_arguments() {
-    if [ -z "$VOLUME_NAME" ] || [ -z "$SMB_HOST" ] || [ -z "$SMB_PATH" ] || [ -z "$SMB_USER" ] || [ -z "$SMB_PASS" ]; then
+    if [ -z "$VOLUME_NAME" ] || [ -z "$SMB_HOST" ] || [ -z "$SMB_PATH" ] || [ -z "$SMB_USER" ]; then
         echo "Error: Missing arguments"
         usage
+        exit 1
+    fi
+    if [ -z "$SMB_PASS" ] || [ "$SMB_PASS" == "-" ]; then
+        read -rsp "SMB password for $SMB_USER: " SMB_PASS
+        echo
+    fi
+    # the mount options are comma separated, there is no way to escape a comma inside them
+    if [[ "$SMB_USER" == *,* ]] || [[ "$SMB_PASS" == *,* ]]; then
+        echo "Error: SMB user and password must not contain a comma (,)"
         exit 1
     fi
 }
 
 # check docker volume
 check_volume() {
-    volume_inspect=$(docker volume inspect "$VOLUME_NAME" 2> /dev/null)
     # if the volume exists, prompt user to remove it (supply command)
-    if [ $? -eq 0 ]; then
+    if docker volume inspect "$VOLUME_NAME" &> /dev/null; then
         echo "Volume $VOLUME_NAME already exists. Please remove it first."
         echo "Use this: docker volume rm $VOLUME_NAME"
         exit 1
@@ -76,12 +108,14 @@ create_volume() {
     docker volume create \
             --driver local \
             --opt type=cifs \
-            --opt device=//$SMB_HOST/$SMB_PATH \
-            --opt $OPTSTRING \
-            --name $VOLUME_NAME
+            --opt "device=//$SMB_HOST/$SMB_PATH" \
+            --opt "$OPTSTRING" \
+            --name "$VOLUME_NAME"
 }
 
 install_other_scripts() {
+    local base_url="https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main"
+    local script
     # request permission:
     echo "This action will install several more scripts on this system to aid in handling docker volumes."
     echo "The Scripts will be installed in /usr/local/bin."
@@ -89,21 +123,17 @@ install_other_scripts() {
     read -r answer
     # only continue if user gives permission:
     if [ "$answer" == "y" ]; then
-        # download the scripts:
-        curl -s -o /usr/local/bin/dvbr https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvbr
-        curl -s -o /usr/local/bin/dvls https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvls
-        curl -s -o /usr/local/bin/dvfbr https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvfbr
-        curl -s -o /usr/local/bin/dvsh https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvsh
-        curl -s -o /usr/local/bin/dvsmbcr https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dvsmbcr
-        # make them executable:
-        chmod +x /usr/local/bin/dvbr
-        chmod +x /usr/local/bin/dvfbr
-        chmod +x /usr/local/bin/dvls
-        chmod +x /usr/local/bin/dvsh
-        chmod +x /usr/local/bin/dvsmbcr
+        if [ ! -w /usr/local/bin ]; then
+            echo "Error: No write permission for /usr/local/bin, try again with sudo."
+            exit 1
+        fi
+        # download the scripts (into a temp file first, this script might be one of them and is still running):
+        for script in dvbr dvls dvfbr dvsh dvsmbcr; do
+            download_file "$base_url/$script" "/usr/local/bin/$script" 755 '^#!/bin/bash' || echo "Error: Could not install $script"
+        done
         # install bash completion (volume names, paths inside volumes, backups, ...):
         mkdir -p /etc/bash_completion.d
-        curl -s -o /etc/bash_completion.d/dockerscripts https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dockerscripts-completion.bash
+        download_file "$base_url/dockerscripts-completion.bash" /etc/bash_completion.d/dockerscripts 644 '^complete -F' || echo "Error: Could not install bash completion"
         echo "Scripts installed. You can now use the following scripts:"
         echo "- dvbr.....backup and restore Docker Volumes."
         echo "- dvls.....list files inside a Docker Volume."
@@ -116,12 +146,12 @@ install_other_scripts() {
 
 # MAIN
 # check if the user wants to install the other scripts:
-if [[ "$@" == *"--install"* ]]; then
+if has_flag --install "$@"; then
     install_other_scripts
     exit
 fi
 # check if the user wants to update the script:
-if [[ "$@" == *"--update"* ]]; then
+if has_flag --update "$@"; then
     check_for_updates
     exit
 fi

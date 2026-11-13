@@ -3,4 +3,9 @@
 src=$1
 dest=$2
 
-tar cf - $src | pv -s $(du -sb $src | awk '{print $1}') | gzip -9 > $dest
+if [ -z "$src" ] || [ -z "$dest" ]; then
+    echo "Usage: $0 <source_dir> <destination.tar.gz>"
+    exit 1
+fi
+
+tar cf - "$src" | pv -s "$(du -sb "$src" | awk '{print $1}')" | gzip -9 > "$dest"

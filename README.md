@@ -51,5 +51,5 @@ wget https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/refs/heads/mai
 ```
 dvsmbcr:
 ```bash
-wget https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/refs/heads/main/dvbr -O /usr/local/bin/dvsmbcr && chmod +x /usr/local/bin/dvsmbcr
+wget https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/refs/heads/main/dvsmbcr -O /usr/local/bin/dvsmbcr && chmod +x /usr/local/bin/dvsmbcr
 ```
