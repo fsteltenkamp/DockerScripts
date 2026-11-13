@@ -19,6 +19,19 @@ Every Script accepts the following flags:
 - \-\-update: Update the Script.
 - \-\-install: install all other Scripts present in this repo on your machine.
 
+## Tab-Completion:
+`dockerscripts-completion.bash` adds bash tab-completion for all scripts:
+- volume names (`dvbr`, `dvfbr`, `dvls`, `dvsh`)
+- `backup` / `restore` modes and existing backups in `/srv/dvbr/<volume>` (`dvbr restore`)
+- paths inside a volume (`dvls`, `dvsh`), listed with a short-lived read-only alpine container
+- hostnames, uid/gid and common file/dir modes (`dvsmbcr`)
+
+`--install` sets it up automatically. To install it manually (requires the `bash-completion` package):
+```bash
+mkdir -p /etc/bash_completion.d && wget https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/refs/heads/main/dockerscripts-completion.bash -O /etc/bash_completion.d/dockerscripts
+```
+Or for your user only, add `source /path/to/dockerscripts-completion.bash` to your `~/.bashrc`.
+
 ## Installation:
 dvbr:
 ```bash

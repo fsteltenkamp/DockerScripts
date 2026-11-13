@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.0"
+VERSION="1.1"
 VOLUME_NAME=$1
 SMB_HOST=$2
 SMB_PATH=$3
@@ -101,12 +101,16 @@ install_other_scripts() {
         chmod +x /usr/local/bin/dvls
         chmod +x /usr/local/bin/dvsh
         chmod +x /usr/local/bin/dvsmbcr
+        # install bash completion (volume names, paths inside volumes, backups, ...):
+        mkdir -p /etc/bash_completion.d
+        curl -s -o /etc/bash_completion.d/dockerscripts https://raw.githubusercontent.com/fsteltenkamp/DockerScripts/main/dockerscripts-completion.bash
         echo "Scripts installed. You can now use the following scripts:"
         echo "- dvbr.....backup and restore Docker Volumes."
         echo "- dvls.....list files inside a Docker Volume."
         echo "- dvfbr....start a filebrowser to manage files in a Docker Volume."
         echo "- dvsh.....start a shell inside a Docker Volume."
         echo "- dvsmbcr..easily create a new Volume that is connected to a SMB Share."
+        echo "Tab-completion is enabled in new shells (requires the bash-completion package)."
     fi
 }
 
